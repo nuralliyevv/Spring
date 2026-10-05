@@ -1,0 +1,41 @@
+### Get all courses
+GET http://localhost:8080/api/courses
+
+### Create course
+POST http://localhost:8080/api/courses
+Content-Type: application/json
+
+{
+  "title": "Spring Framework",
+  "description": "Learning Spring Boot and REST API",
+  "credits": 5
+}
+
+### Get course by id
+GET http://localhost:8080/api/courses/1
+
+### Update course
+PUT http://localhost:8080/api/courses/1
+Content-Type: application/json
+
+{
+  "title": "Spring Boot",
+  "description": "Learning Spring Boot REST API",
+  "credits": 6
+}
+
+### Delete course
+DELETE http://localhost:8080/api/courses/1
+
+### Get non-existing course
+GET http://localhost:8080/api/courses/999
+
+### Invalid course
+POST http://localhost:8080/api/courses
+Content-Type: application/json
+
+{
+  "title": "",
+  "description": "",
+  "credits": 20
+}
