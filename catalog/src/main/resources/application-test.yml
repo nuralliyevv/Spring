@@ -1,0 +1,5 @@
+catalog:
+  welcome-message: "TEST: hello from the catalog"
+logging:
+  level:
+    com.example.catalog: INFO

@@ -1,0 +1,11 @@
+catalog:
+  welcome-message: "DEV: hello from the catalog"
+  startup-banner: true
+
+spring:
+  jpa:
+    show-sql: true
+
+logging:
+  level:
+    com.example.catalog: DEBUG

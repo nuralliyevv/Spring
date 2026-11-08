@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: catalog
+  profiles:
+    active: dev
+  datasource:
+    url: jdbc:postgresql://localhost:5432/catalog
+    username: catalog
+    password: catalog
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+catalog:
+  name: Book Catalog
+  default-page-size: 10
+  max-page-size: 50
