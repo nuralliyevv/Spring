@@ -22,3 +22,8 @@ external:
     base-url: https://openlibrary.org
     connect-timeout: 2s
     read-timeout: 3s
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-secret-key-change-me-please-0123456789}
+    expiration: 1h
