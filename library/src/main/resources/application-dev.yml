@@ -3,6 +3,12 @@ server:
   error:
     include-message: always
 
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/library
+    username: library
+    password: library
+
 logging:
   level:
     com.example.library: DEBUG

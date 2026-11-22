@@ -1,7 +1,9 @@
 package com.example.library.controller;
 
+import com.example.library.domain.Book;
 import com.example.library.dto.BookRequest;
 import com.example.library.dto.BookResponse;
+import com.example.library.mapper.BookMapper;
 import com.example.library.service.BookService;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -25,34 +27,36 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 public class BookController {
 
     private final BookService service;
+    private final BookMapper mapper;
 
-    public BookController(BookService service) {
+    public BookController(BookService service, BookMapper mapper) {
         this.service = service;
+        this.mapper = mapper;
     }
 
     @PostMapping
     public ResponseEntity<BookResponse> create(@Valid @RequestBody BookRequest request) {
-        BookResponse created = service.create(request);
+        Book created = service.create(mapper.toDomain(request));
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(created.id())
                 .toUri();
-        return ResponseEntity.created(location).body(created);
+        return ResponseEntity.created(location).body(mapper.toResponse(created));
     }
 
     @GetMapping
     public List<BookResponse> findAll(@RequestParam(required = false) String author) {
-        return service.findAll(author);
+        return service.findAll(author).stream().map(mapper::toResponse).toList();
     }
 
     @GetMapping("/{id}")
     public BookResponse findById(@PathVariable Long id) {
-        return service.findById(id);
+        return mapper.toResponse(service.findById(id));
     }
 
     @PutMapping("/{id}")
     public BookResponse update(@PathVariable Long id, @Valid @RequestBody BookRequest request) {
-        return service.update(id, request);
+        return mapper.toResponse(service.update(id, mapper.toDomain(request)));
     }
 
     @DeleteMapping("/{id}")

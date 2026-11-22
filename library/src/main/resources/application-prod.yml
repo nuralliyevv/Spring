@@ -3,6 +3,12 @@ server:
   error:
     include-message: never
 
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
 logging:
   level:
     root: INFO
