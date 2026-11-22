@@ -1,0 +1,92 @@
+@host = http://localhost:8080
+@base = {{host}}/api/v1/books
+
+### 1. Create a book -> 201 Created + Location header
+POST {{base}}
+Content-Type: application/json
+
+{
+  "title": "Clean Code",
+  "author": "Robert Martin",
+  "isbn": "9780132350884",
+  "publishedYear": 2008
+}
+
+### 2. Create a second book -> 201
+POST {{base}}
+Content-Type: application/json
+
+{
+  "title": "Effective Java",
+  "author": "Joshua Bloch",
+  "isbn": "9780134685991",
+  "publishedYear": 2018
+}
+
+### 3. List all books -> 200
+GET {{base}}
+
+### 4. Filter by author -> 200
+GET {{base}}?author=Joshua Bloch
+
+### 5. Get one book -> 200
+GET {{base}}/1
+
+### 6. Update a book -> 200
+PUT {{base}}/1
+Content-Type: application/json
+
+{
+  "title": "Clean Code: A Handbook of Agile Software Craftsmanship",
+  "author": "Robert Martin",
+  "isbn": "9780132350884",
+  "publishedYear": 2008
+}
+
+### 7. Delete a book -> 204 No Content
+DELETE {{base}}/2
+
+### ---------- ERROR CASES ----------
+
+### 8. Validation errors -> 400 with a list of violations
+POST {{base}}
+Content-Type: application/json
+
+{
+  "title": "",
+  "author": "Someone",
+  "isbn": "123",
+  "publishedYear": 1200
+}
+
+### 9. Malformed JSON -> 400
+POST {{base}}
+Content-Type: application/json
+
+{ "title": "Broken
+
+### 10. Book not found -> 404
+GET {{base}}/999
+
+### 11. Duplicate ISBN -> 409 Conflict (run request 1 first)
+POST {{base}}
+Content-Type: application/json
+
+{
+  "title": "Clean Code copy",
+  "author": "Robert Martin",
+  "isbn": "9780132350884",
+  "publishedYear": 2008
+}
+
+### 12. Invalid id type -> 400
+GET {{base}}/abc
+
+### 13. Delete a non-existing book -> 404
+DELETE {{base}}/999
+
+### 14. Unsupported method -> 405
+PATCH {{base}}/1
+Content-Type: application/json
+
+{}

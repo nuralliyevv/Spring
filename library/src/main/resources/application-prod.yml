@@ -1,0 +1,9 @@
+server:
+  port: 8080
+  error:
+    include-message: never
+
+logging:
+  level:
+    root: INFO
+    com.example.library: INFO
