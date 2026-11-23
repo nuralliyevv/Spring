@@ -5,10 +5,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.example.library.domain.Book;
 import com.example.library.entity.BookEntity;
+import com.example.library.event.BookCreatedEvent;
 import com.example.library.exception.DuplicateResourceException;
 import com.example.library.exception.ResourceNotFoundException;
 import com.example.library.mapper.BookMapper;
@@ -22,6 +24,7 @@ import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Sort;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,11 +33,14 @@ class BookServiceTest {
     @Mock
     private BookRepository repository;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private BookService service;
 
     @BeforeEach
     void setUp() {
-        service = new BookService(repository, Mappers.getMapper(BookMapper.class));
+        service = new BookService(repository, Mappers.getMapper(BookMapper.class), eventPublisher);
     }
 
     private static BookEntity entity(Long id, String isbn) {
@@ -44,7 +50,7 @@ class BookServiceTest {
     // ---------- create ----------
 
     @Test
-    void create_newIsbn_savesBookAndReturnsItWithId() {
+    void create_newIsbn_savesBookAndPublishesEvent() {
         Book input = new Book(null, "Clean Code", "Robert Martin", "9780132350884", 2008);
         when(repository.existsByIsbn("9780132350884")).thenReturn(false);
         when(repository.save(any(BookEntity.class))).thenAnswer(invocation -> {
@@ -58,14 +64,18 @@ class BookServiceTest {
         assertThat(result.id()).isEqualTo(1L);
         assertThat(result.title()).isEqualTo("Clean Code");
 
-        ArgumentCaptor<BookEntity> captor = ArgumentCaptor.forClass(BookEntity.class);
-        verify(repository).save(captor.capture());
-        assertThat(captor.getValue().getIsbn()).isEqualTo("9780132350884");
-        assertThat(captor.getValue().getAuthor()).isEqualTo("Robert Martin");
+        ArgumentCaptor<BookEntity> entityCaptor = ArgumentCaptor.forClass(BookEntity.class);
+        verify(repository).save(entityCaptor.capture());
+        assertThat(entityCaptor.getValue().getIsbn()).isEqualTo("9780132350884");
+
+        ArgumentCaptor<BookCreatedEvent> eventCaptor = ArgumentCaptor.forClass(BookCreatedEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().bookId()).isEqualTo(1L);
+        assertThat(eventCaptor.getValue().isbn()).isEqualTo("9780132350884");
     }
 
     @Test
-    void create_existingIsbn_throwsDuplicateAndDoesNotSave() {
+    void create_existingIsbn_throwsDuplicateAndPublishesNothing() {
         Book input = new Book(null, "Clean Code", "Robert Martin", "9780132350884", 2008);
         when(repository.existsByIsbn("9780132350884")).thenReturn(true);
 
@@ -74,6 +84,7 @@ class BookServiceTest {
                 .hasMessageContaining("already exists");
 
         verify(repository, never()).save(any());
+        verifyNoInteractions(eventPublisher);
     }
 
     // ---------- read ----------

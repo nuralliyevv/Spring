@@ -90,3 +90,26 @@ PATCH {{base}}/1
 Content-Type: application/json
 
 {}
+
+
+### ---------- SIS 3 ----------
+
+### 15. Book details: stored data + Open Library (run request 1 first) -> 200
+GET {{base}}/1/details
+
+### 16. Circuit breaker state
+GET {{host}}/actuator/circuitbreakers
+
+### 17. OpenAPI document (JSON) -> 200
+GET {{host}}/v3/api-docs
+
+### 18. Event that fails in the consumer -> ends up in the dead-letter topic
+POST {{base}}
+Content-Type: application/json
+
+{
+  "title": "FAIL demo",
+  "author": "Test Author",
+  "isbn": "9780000000001",
+  "publishedYear": 2020
+}

@@ -11,5 +11,11 @@ services:
     volumes:
       - library-pgdata:/var/lib/postgresql/data
 
+  kafka:
+    image: apache/kafka:3.9.0
+    container_name: library-kafka
+    ports:
+      - "9092:9092"
+
 volumes:
   library-pgdata:

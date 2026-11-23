@@ -2,7 +2,9 @@ package com.example.library.controller;
 
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -15,9 +17,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.example.library.domain.Book;
+import com.example.library.domain.BookDetails;
+import com.example.library.domain.ExternalBookInfo;
 import com.example.library.exception.DuplicateResourceException;
 import com.example.library.exception.ResourceNotFoundException;
 import com.example.library.mapper.BookMapperImpl;
+import com.example.library.service.BookDetailsService;
 import com.example.library.service.BookService;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -55,6 +60,9 @@ class BookControllerTest {
 
     @MockitoBean
     private BookService service;
+
+    @MockitoBean
+    private BookDetailsService detailsService;
 
     private static Book book(long id) {
         return new Book(id, "Clean Code", "Robert Martin", "9780132350884", 2008);
@@ -156,6 +164,39 @@ class BookControllerTest {
     }
 
     @Test
+    void details_withExternalInfo_returnsMergedData() throws Exception {
+        ExternalBookInfo external = new ExternalBookInfo(464, "Prentice Hall", "https://example.com/cover.jpg");
+        when(detailsService.getDetails(1L)).thenReturn(new BookDetails(book(1L), external));
+
+        mockMvc.perform(get("/api/v1/books/1/details"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.numberOfPages").value(464))
+                .andExpect(jsonPath("$.publisher").value("Prentice Hall"))
+                .andExpect(jsonPath("$.externalInfoAvailable").value(true));
+    }
+
+    @Test
+    void details_externalServiceUnavailable_returnsStoredDataOnly() throws Exception {
+        when(detailsService.getDetails(1L)).thenReturn(new BookDetails(book(1L), null));
+
+        mockMvc.perform(get("/api/v1/books/1/details"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Clean Code"))
+                .andExpect(jsonPath("$.numberOfPages").value(nullValue()))
+                .andExpect(jsonPath("$.externalInfoAvailable").value(false));
+    }
+
+    @Test
+    void details_missingBook_returns404() throws Exception {
+        when(detailsService.getDetails(99L)).thenThrow(new ResourceNotFoundException("Book with id 99 not found"));
+
+        mockMvc.perform(get("/api/v1/books/99/details"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Book with id 99 not found"));
+    }
+
+    @Test
     void update_validRequest_returns200() throws Exception {
         when(service.update(any(Long.class), any(Book.class))).thenReturn(book(1L));
 
@@ -176,7 +217,7 @@ class BookControllerTest {
 
     @Test
     void delete_missing_returns404() throws Exception {
-        org.mockito.Mockito.doThrow(new ResourceNotFoundException("Book with id 99 not found"))
+        doThrow(new ResourceNotFoundException("Book with id 99 not found"))
                 .when(service).delete(99L);
 
         mockMvc.perform(delete("/api/v1/books/99"))

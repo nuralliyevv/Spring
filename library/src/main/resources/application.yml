@@ -7,3 +7,64 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+
+  cache:
+    type: caffeine
+    cache-names: books, externalBookInfo
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=10m
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+        max.block.ms: 3000
+    consumer:
+      group-id: library-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.value.default.type: com.example.library.event.BookCreatedEvent
+        spring.json.trusted.packages: com.example.library.event
+
+library:
+  open-library:
+    base-url: https://openlibrary.org
+    connect-timeout: 2s
+    read-timeout: 3s
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      openLibrary:
+        register-health-indicator: true
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 5
+        minimum-number-of-calls: 3
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 2
+        ignore-exceptions:
+          - org.springframework.web.client.HttpClientErrorException
+  retry:
+    instances:
+      openLibrary:
+        max-attempts: 3
+        wait-duration: 300ms
+        retry-exceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - org.springframework.web.client.HttpServerErrorException
+        ignore-exceptions:
+          - io.github.resilience4j.circuitbreaker.CallNotPermittedException
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,circuitbreakers

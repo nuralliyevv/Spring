@@ -12,3 +12,5 @@ spring:
 logging:
   level:
     com.example.library: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.apache.kafka: WARN
